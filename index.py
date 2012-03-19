@@ -133,34 +133,15 @@ at a rate of %0.3f records per second.
     print_lock.release()
 
 
-def multiprocess_index(file_or_urls,shard_size=10000):
-    count,marc_recs = 1,[]
-    for file_ref in file_or_urls:
-        reader = pymarc.MARCReader(open(file_ref,'rb'))
-        while 1:
-            try:
-                rec = next(reader)
-                marc_recs.append(rec)
-            except StopIteration:
-                print("Finished indexing")
-            except:
-                print("Error indexing record at count %s" % count)
-            if not count%shard_size:
-                print("Starting indexing of %s to %s" % (count-shard_size,count))
-                index_shard(marc_recs)
-                marc_rec = []
-            count += 1
-                
-            
-
 def pool_multiprocess_index(file_or_urls,shard_size=10000):
+    pool = Pool(processes=3)
     for file_ref in file_or_urls:
         reader = pymarc.MARCReader(open(file_ref,'rb'))
         print("Start-up multiprocess pool")
         pool.map_async(index_shard,reader,shard_size)
     print("Finished multiprocess")
 
-def old_multiprocess_index(file_or_urls,shard_size=10000):
+def multiprocess_index(file_or_urls,shard_size=10000):
     lock = Lock()
     t1 = time.time()
     total_recs = 0
@@ -169,12 +150,10 @@ def old_multiprocess_index(file_or_urls,shard_size=10000):
         error_recs = open('%s-bad.mrc' % file_ref,'wb')
         print("Starting multiprocess index for %s, sharding by %s" % (file_ref,
                                                                       shard_size))
-#        pool.map(index_shard,reader,shard_size)
         count = 1
         marc_recs = []
         for rec in reader:
             if not count%shard_size:
-                #pool.apply_async(index_shard,args=marc_recs)
                 shard_process = Process(target=index_shard,args=(marc_recs,))
                 if shard_process is not None:
                     shard_process.start()
