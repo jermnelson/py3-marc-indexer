@@ -147,7 +147,7 @@ def multiprocess_index(file_or_urls,shard_size=10000):
     total_recs = 0
     for file_ref in file_or_urls:
         reader = pymarc.MARCReader(open(file_ref,'rb'))
-        error_recs = open('%s-bad.mrc' % file_ref,'wb')
+#        error_recs = open('%s-bad.mrc' % file_ref,'wb')
         print("Starting multiprocess index for %s, sharding by %s" % (file_ref,
                                                                       shard_size))
         count = 1
