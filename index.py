@@ -261,6 +261,13 @@ def load_solr(csv_file):
     return response.read()
 
 
+def cleanup_csv():
+   for row in os.listdir():
+       if row[-3:] == 'csv':
+           load_solr(row)
+           os.remove(row)
+           print("Loaded %s into solr and removed" % row)
+
 if __name__ == '__main__':
     args = arg_parser.parse_args()
     #print("Passed in %s" % args.file_or_urls)
