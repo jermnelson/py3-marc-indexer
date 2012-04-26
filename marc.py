@@ -614,6 +614,8 @@ def get_location(record):
             for code in locations_raw:
                 code = LOCATION_RE.sub("",code)
                 output.append(tutt_maps.LOCATION_CODE_MAP[code])
+                if code in tutt_maps.SPECIAL_COLLECTIONS:
+                    output.append("Special Collections")
         except KeyError:
             logging.info("%s Location unknown=%s" % (record.title(),locations[0].value()))
             output.append('Unknown')
