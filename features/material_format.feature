@@ -30,6 +30,10 @@ Feature: Determine material format from a MARC21 record
         | code | position | value |
         | LDR  | 7        | s     |
         | 008  | 21       | m     |
+        But if "<code>" field "<position>" is "<value>"
+        | code | position | value |
+        | LDR  | 6        | t     |
+        | 008  | 24       | b     |
         Then the entity is a Book
 
 
@@ -77,6 +81,10 @@ Feature: Determine material format from a MARC21 record
         | code | position | value |
         | 007  | 0        | k     |
         | 007  | 1        | n     |
+        But if "<code>" field "<position>" is "<value>"
+        | code | position | value |
+        | LDR  | 6        | k     |
+        | 008  | 33       | n     |
         Then the entity is a Chart
 
     Scenario: The entity is a Collage
@@ -93,103 +101,138 @@ Feature: Determine material format from a MARC21 record
         | code | position | value |
         | LDR  | 6        | a     |
         | LDR  | 7        | c     |
+        But if "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | LDR  | 6        | p     |
+        | LDR  | 7        | c     |
         Then the entity is a Collection
 
     Scenario: The entity is a Drawing
         Given we have a MARC record
-        And we have leader and 007 fields
-        When 007 field position 0 is k
-        When 007 field position 1 is d or l
+        When "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | 007  | 0        | k     |
+        | 007  | 1        | d     |
+        | 007  | 1        | l     |
         Then the entity is a Drawing
 
     Scenario: The entity is a DVD Video 
         Given we have a MARC record
-        And we have leader and 007 fields
-        When 007 field position 0 is v
-        When 007 field position 1 is d
-        When 007 field position 4 is v,g
+        When "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | 007  | 0        | v     |
+        | 007  | 1        | d     |
+        | 007  | 4        | v     |
+        | 007  | 4        | g     |
         Then the entity is a DVD Video
 
     Scenario: The entity is an Electronic
         Given we have a MARC record
-        And we have leader and 007 fields
-        When 007 field position 0 is c 
-        When 007 field position 1 is r
-        Then the entity is an Electronic
-
-    Scenario: The entity is an Electronic
-        Given we have a MARC record
-        And we have leader and 008 fields
-        When the leader position 7 is m 
-        When 008 field position 23 is s
+        When "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | 007  | 0        | c     |
+        | 007  | 1        | r     |
+        But if "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | LDR  | 7        | m     |
+        | 008  | 23       | s     |
+        But if "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | LDR  | 6        | m     |
         Then the entity is an Electronic
 
     Scenario: The entity is a Filmstrip 
         Given we have a MARC record
-        And we have leader and 007 fields
-        When 007 field position 0 is m
-        When 007 field position 1 is r
+        When "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | 007  | 0        | c     |
+        | 007  | 1        | r     |
         Then the entity is a Filmstrip
 
     Scenario: The entity is a Flash Card
         Given we have a MARC record
-        When we have leader and 007 fields
-        When 007 field position 0 is k 
-        When 007 field position 1 is o
+        When "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | 007  | 1        | o     |
+        But if "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | LDR  | 6        | k     |
+        | 008  | 33       | o     |
         Then the entity is a Flash Card
 
     Scenario: The entity is a Floppy Disk
         Given we have a MARC record
-        When we have leader and 007 fields
-        When 007 field position 0 is c 
-        When 007 field position 1 is j
+        When "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | 007  | 0        | c     |
+        | 007  | 1        | j     |
         Then the entity is a Floppy Disk
+
+    Scenario: The entity is a Game
+        Given we have a MARC record
+        When "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | LDR  | 6        | r     |
+        | 008  | 33       | b     |
+        Then the entity is a Game
 
     Scenario: The entity is a Globe
         Given we have a MARC record
-        When we have 007 fields
-        When 007 field position 0 is d 
+        When "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | 00   | 0        | d     | 
         Then the entity is a Globe
 
     Scenario: The entity is a Journal
         Given we have a MARC record
-        And we have 008 fields
-        When the leader position 7 is s 
-        When 008 field position 21 not m
+        When "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | LDR  | 7        | s     |    
+        | 008  | 21       | m     |
+        But if "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | LDR  | 7        | s     |    
         Then the entity is a Journal
 
-    Scenario: The entity is a Journal
-        Given we have a MARC record
-        When the leader position 7 is s 
-        Then the entity is a Journal
 
     Scenario: The entity is a kit
         Given we have a MARC record
-        And we have leader and 007 fields
-        When 007 field position 0 is o 
+        When "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | 007  | 0        | o     |
         Then the entity is a kit
 
     Scenario: The entity is a Large Print Book
         Given we have a MARC record
-        And we have leader and 008 fields
-        When the leader position 7 is m
-        When 008 field position 23 is d
+        When "<code>" field "<position>" are "<value>"
+        | code | position | value |
+        | LDR  | 7        | m     |
+        | 008  | 23       | d     |
         Then the entity is a Large Print Book
 
     Scenario: The entity is a LP Record
         Given we have a MARC record
         When "<code>" field "<position>" is "<value>"
         | code | position | value|
+        | LDR  | 6        | j    |
         | 007  | 0        | s    |
         | 007  | 1        | d    |
         | 007  | 6        | e    |
-        When the leader position 6 is j
         Then the entity is a LP Record
 
-     Scenario: The entity is a Manuscript
+    Scenario: The entity is a Manuscript
         Given we have a MARC record
-        When the leader position 6 is b 
+        When "<code>" field "<position>" is "<value>"
+        | code | position | value|
+        | LDR  | 6        | b    |
         Then the entity is a Manuscript
+
+    Scenario: The entity is a Manuscript noted music
+        Given we have a MARC record
+        When "<code>" field "<position>" is "<value>"
+        | code | position | value|
+        | LDR  | 6        | d    |
+        Then the entity is a Manuscript noted music
 
     Scenario: The entity is a Map
         Given we have a MARC record
@@ -200,6 +243,9 @@ Feature: Determine material format from a MARC21 record
         When "<code>" field "<position>" not "<value>"
         | code | position | value|
         | 007  | 1        | d    |
+        But if "<code>" field "<position>" is "<value>"
+        | code | position | value|
+        | LDR  | 6        | e    |
         Then the entity is a Map
 
  
@@ -209,6 +255,16 @@ Feature: Determine material format from a MARC21 record
         | code | position | value |
         | 007  | 0        | h     |
         Then the entity is a Microfilm
+
+    Scenario: The entity is a Mixed Materials
+        Given we have a MARC record
+        When "<code>" field "<position>" is "<value>"
+        | code | position | value |
+        | LDR  | 6        | p     |
+        When "<code>" field "<position>" not "<value>"
+        | code | position | value |
+        | LDR  | 7        | c     |
+        Then the entity is a Mixed Materials
 
     Scenario: The entity is a Motion picture
         Given we have a MARC record
@@ -225,19 +281,29 @@ Feature: Determine material format from a MARC21 record
         Given we have a MARC record
         When "<code>" field "<position>" is "<value>"
         | code | position | value |
+        | LDR  | 6        | j     |
         | 007  | 0        | s     |
         | 007  | 1        | d     |
         | 007  | 6        | g     |
         | 007  | 6        | z     |
-        When the leader position 6 is j
         Then the entity is a Music CD
 
-    Scenario: The entity is a musical score 
+    Scenario: The entity is a Musical Score 
         Given we have a MARC record
         When "<code>" field "<position>" is "<value>"
         | code | position | value |
         | 007  | 0        | a     |
-        Then the entity is a mustical score
+        But if "<code>" field "<position>" is "<value>"
+        | code | position | value |
+        | LDR  | 6        | g     |
+        Then the entity is a Musical Score
+
+    Scenario: The entity is a Music Sound Recording 
+        Given we have a MARC record
+        When "<code>" field "<position>" is "<value>"
+        | code | position | value |
+        | LDR  | 6        | j     |
+        Then the entity is a Music Sound Recording 
 
     Scenario: The entity is a Painting 
         Given we have a MARC record
@@ -272,6 +338,14 @@ Feature: Determine material format from a MARC21 record
         | 007  | 1        | g     | 
         Then the entity is a Photonegative
 
+    Scenario: The entity is a Poster
+        Given we have a MARC record
+        When "<code>" field "<position>" is "<value>"
+        | code | position | value |
+        | LDR  | 6        | k     |
+        | 008  | 33       | i     |
+        Then the entity is a Poster
+
     Scenario: The entity is a Print 
         Given we have a MARC record
         When "<code>" field "<position>" is "<value>"
@@ -283,10 +357,30 @@ Feature: Determine material format from a MARC21 record
 
     Scenario: The entity is a Series
         Given we have a MARC record
-        When the leader position 6 is a
-        When the leader position 7 is c
+        When "<code>" field "<position>" is "<value>"
+        | code | position | value |
+        | LDR  | 6        | a     | 
+        | LDR  | 7        | c     |
         Then the entity is a Series
 
+    Scenario: The entity is a Spoken Sound Recording
+        Given we have a MARC record
+        When "<code>" field "<position>" is "<value>"
+        | code | position | value |
+        | LDR  | 6        | i     |
+        When "<code>" field "<position>" not "<value>"
+        | code | position | value |
+        | LDR  | 6        | \#    |
+        Then the entity is a Spoken Sound Recording
+
+    Scenario: The entity is a Thesis
+        Given we have a MARC record
+        When "<code>" field "<position>" is "<value>"
+        | code | position | value |
+        | LDR  | 6        | t     |
+        | 008  | 24       | m     |
+        Then the entity is a Thesis
+ 
     Scenario: The entity is a VHS Video 
         Given we have a MARC record
         When "<code>" field "<position>" is "<value>"
