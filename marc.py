@@ -53,6 +53,7 @@ logging.basicConfig(filename='%slog/%s-marc-solr-indexer.log' % (settings.BASE_D
                                                                  datetime.datetime.today().strftime('%Y%m%d-%H')),
                     level=logging.INFO)
 
+
 #logger = logging.getLogger('marc_solr_import')
 #logger.setLevel(logging.INFO)
 #logger.addHandler(logging.FileHandler('%slog/%s-marc-solr-indexer.out' %\
@@ -408,7 +409,6 @@ def get_format(record):
     # Some formats are determined by location
     
     format = lookup_location(record,format)
-    logging.error("After lookup Format is %s" % format)
     return format
 
 def lookup_location(record,format=None):
@@ -422,7 +422,6 @@ def lookup_location(record,format=None):
     location_list = locations = record.get_fields('994')
     for location in location_list:
          subfield_a = location['a']
-         logging.error("Location is %s" % subfield_a)
          in_reference = REF_LOC_RE.search(subfield_a)
          if in_reference is not None:
               ref_loc_code = in_reference.groups()[0]
@@ -656,6 +655,7 @@ def get_record(marc_record, ils=None):
     George, Henry, 1839-1897.
     """
     record = {}
+    marc_error_file = open('tutt-errors.mrc','ab')
 
     # TODO: split ILS-specific into separate parsers that subclass this one:
     # horizonmarc, iiimarc, etc.
@@ -675,6 +675,9 @@ def get_record(marc_record, ils=None):
         #sys.stderr.write("\nNo value in ID field, leaving ID blank\n")
         #record['id'] = ''
         # if it has no id let's not include it
+        marc_error_file.write(marc_record.as_marc().encode('utf8','ignore'))
+        marc_error_file.close()
+        logging.error("%s: %s not indexed because of AttributeError" % (marc_record['907']['a'],marc_record.title()))
         return
     all999s = marc_record.get_fields('999')
     if all999s:
@@ -683,6 +686,8 @@ def get_record(marc_record, ils=None):
             for code in suppressed_codes:
                 if code == 'n':
                     logging.error("NOT INDEXING %s RECORD SUPPRESSED" % record['id'])
+                    marc_error_file.write(marc_record.as_marc().encode('utf8','replace'))
+                    marc_error_file.close()
                     return
     record['format'] = get_format(marc_record)
 
@@ -828,6 +833,7 @@ def get_record(marc_record, ils=None):
         for url in  url_subfield:
             record['url'].append(url)
     record['marc_record'] = marc_record.__str__()  # Should output to MARCMaker format
+    marc_error_file.close()
     return record
 
 def get_row(record):

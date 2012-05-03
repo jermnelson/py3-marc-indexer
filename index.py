@@ -92,24 +92,33 @@ def index_shard(marc_recs):
             if counter%100:
                 sys.stderr.write('.')
             print_lock.release()
-            indexed_dict = module.get_record(record,ils=module.settings.ILS)
-            if indexed_dict is not None:
-                for row in indexed_dict.items():
-                    key,value = row
-                    if type(value) == list or type(value) == set:
-                        value = '|'.join([item for item in value])
-                        indexed_dict[key] = value
-                    elif type(value) == dict:
-                        value = '|'.join([item for item in value.values()])
-                csv_writer.writerow(indexed_dict)
-                counter += 1
-            else:
-                print_lock.acquire()
-                print("Invalid indexing of row=%s in pid=%s" % (counter,pid))
-                logging.error("Invalid indexing of %s" % record.title())
-                print_lock.release()
-            
-
+            try:
+                indexed_dict = module.get_record(record,ils=module.settings.ILS)
+                if indexed_dict is not None:
+                    for row in indexed_dict.items():
+                        key,value = row
+                        if type(value) == list or type(value) == set:
+                            value = '|'.join([item for item in value])
+                            indexed_dict[key] = value
+                        elif type(value) == dict:
+                            value = '|'.join([item for item in value.values()])
+                    csv_writer.writerow(indexed_dict)
+                    counter += 1
+                else:
+                    marc_error_file = open('tutt-errors.mrc','ab')
+                    marc_error_file.write(marc_record.as_marc().encode('utf8','ignore'))
+                    marc_errors_file.close()
+                    print_lock.acquire()
+                    print("Invalid indexing of row=%s in pid=%s" % (counter,pid))
+                    logging.error("Invalid indexing of %s" % record.title())
+             
+                    print_lock.release()
+            except:
+                print("Error %s for %s" % (sys.exc_info()[0],record.title()))
+                logging.error("Exception %s indexing %s" % (sys.exc_info()[0],
+                                                            record.title()))
+                marc_error_file = open('tutt-errors.mrc','ab')
+                marc_error_file.write(record.as_marc().encode('utf8','ignore'))
     finally:
         csv_handle.close()
     record_count = counter
@@ -154,6 +163,7 @@ def multiprocess_index(file_or_urls,shard_size=10000):
         marc_recs = []
         for rec in reader:
             if not count%shard_size:
+                marc_recs.append(rec)
                 shard_process = Process(target=index_shard,args=(marc_recs,))
                 if shard_process is not None:
                     shard_process.start()
