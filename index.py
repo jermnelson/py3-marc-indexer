@@ -105,20 +105,28 @@ def index_shard(marc_recs):
                     csv_writer.writerow(indexed_dict)
                     counter += 1
                 else:
-                    marc_error_file = open('tutt-errors.mrc','ab')
-                    marc_error_file.write(marc_record.as_marc().encode('utf8','ignore'))
-                    marc_errors_file.close()
                     print_lock.acquire()
-                    print("Invalid indexing of row=%s in pid=%s" % (counter,pid))
-                    logging.error("Invalid indexing of %s" % record.title())
-             
+                    marc_error_file = open('tutt-errors.mrc','ab')
+                    marc_error_file.write(record.as_marc().encode('utf8','ignore'))
+                    marc_errors_file.close()
+                    error_msg = "Invalid indexing of row=%s in pid=%s title=%s" % (counter,
+                                                                                   pid,
+                                                                                   record.title())
+                    print(error_msg)
+                    logging.error(error_msg)
                     print_lock.release()
             except:
-                print("Error %s for %s" % (sys.exc_info()[0],record.title()))
-                logging.error("Exception %s indexing %s" % (sys.exc_info()[0],
-                                                            record.title()))
-                marc_error_file = open('tutt-errors.mrc','ab')
-                marc_error_file.write(record.as_marc().encode('utf8','ignore'))
+                print_lock.acquire()
+                error_msg = "Error %s in %s row=%s" % (sys.exc_info()[0],pid,counter)
+                if record is not None:
+                    marc_error_file = open('tutt-errors.mrc','ab')
+                    marc_error_file.write(record.as_marc().encode('utf8','ignore'))
+                    marc_error_file.close()
+                    error_msg = '%s title=%s' % (error_msg,record.title())
+                print(error_msg)
+                logging.error(error_msg)
+                print_lock.release()
+ 
     finally:
         csv_handle.close()
     record_count = counter
@@ -155,13 +163,28 @@ def multiprocess_index(file_or_urls,shard_size=10000):
     t1 = time.time()
     total_recs = 0
     for file_ref in file_or_urls:
-        reader = pymarc.MARCReader(open(file_ref,'rb'))
+        reader = pymarc.MARCReader(open(file_ref,'rb'),utf8_handling="xmlcharrefreplace")
 #        error_recs = open('%s-bad.mrc' % file_ref,'wb')
         print("Starting multiprocess index for %s, sharding by %s" % (file_ref,
                                                                       shard_size))
         count = 1
         marc_recs = []
-        for rec in reader:
+        while 1:
+            try:
+                rec = next(reader)
+            except ValueError as error:
+                lock.acquire()
+                error_msg = "%s for record %s in %s" % ("ValueError: {0}".format(error),
+                                                        count,
+                                                        file_ref)
+                print(error_msg)
+                logging.error(error_msg)
+                lock.release()
+                count += 1
+                pass
+                #rec = next(reader)
+            except StopIteration:
+                break
             if not count%shard_size:
                 marc_recs.append(rec)
                 shard_process = Process(target=index_shard,args=(marc_recs,))
@@ -170,15 +193,19 @@ def multiprocess_index(file_or_urls,shard_size=10000):
                     shard_process.join()
                 else:
                     lock.acquire()
-                    print("Unable to process %s" % file_ref)
+                    error_msg = "Unable to process %s total_recs=%s" % (file_ref,total_recs)
+                    print(error_msg)
+                    logging.error(error_msg)
                     lock.release()
-                marc_recs = []
+                    marc_recs = []
             else:
-                if not count%1000:
-                    sys.stderr.write(".")
                 marc_recs.append(rec)
+            if count%1000:
+                sys.stderr.write(".")
+            else:
+                sys.stderr.write(str(count))
             count += 1
-        total_recs += count
+            total_recs += count
     t2 = time.time()
     total_time = (t2 - t1) / 60.0
     print("Finished multi-processing %s in %0.3f" % (total_recs,
