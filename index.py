@@ -108,7 +108,7 @@ def index_shard(marc_recs):
                     print_lock.acquire()
                     marc_error_file = open('tutt-errors.mrc','ab')
                     marc_error_file.write(record.as_marc().encode('utf8','ignore'))
-                    marc_errors_file.close()
+                    marc_error_file.close()
                     error_msg = "Invalid indexing of row=%s in pid=%s title=%s" % (counter,
                                                                                    pid,
                                                                                    record.title())
