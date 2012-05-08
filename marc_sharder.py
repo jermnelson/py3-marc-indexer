@@ -16,8 +16,8 @@ def shard(shard_size,input_marc_filename):
     marc_reader = pymarc.MARCReader(open(input_marc_filename,'rb'),
                                     utf8_handling='ignore')
     count = 0
-    output_file = open('shard-%sk-%s.mrc' % (count,shard_size+count),'wb')
-    error_log = open('errors.log','wb')
+    output_file = open('shard-%sk-%s.mrc' % (count,shard_size+count),'w')
+    error_log = open('errors.log','w')
     output_recs = []
     print("Started sharding %s at %s" % (input_marc_filename,datetime.datetime.today().isoformat()))
     while 1:
