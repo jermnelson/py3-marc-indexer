@@ -2,3 +2,5 @@ log
 tmp*.csv
 *.bak
 __pycache*
+*.mrc
+*.log
