@@ -664,7 +664,15 @@ def get_record(marc_record, ils=None):
             record['id'] = marc_record['999']['a']
         elif ils == 'III':
             # [1:-1] because that's how it's referred to in the opac
-            record['id'] = marc_record['907']['a'][1:-1]
+            bib_id = marc_record['907']['a']
+            if bib_id is None or len(bib_id) < 10:
+              # Try to extract bib number from 035
+              for field in  marc_record.get_fields('035'):
+                  sub_a = field['a'][1:-1]
+                  if sub_a.startswith('b') and len(sub_a) == 8:
+                      record['id'] = sub_a
+            else:
+                record['id'] = bib_id[1:-1]
         elif ils == 'Unicorn':
             record['id'] = marc_record['35']['a']
         else:

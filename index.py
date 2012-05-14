@@ -25,7 +25,7 @@ import argparse
 import os
 import sys
 import time
-import marc,pymarc
+import marc,pymarc,traceback
 import csv,logging,datetime
 from multiprocessing import Process,Lock,Pool
 import urllib.request, urllib.parse, urllib.error
@@ -118,6 +118,7 @@ def index_shard(marc_recs):
             except:
                 print_lock.acquire()
                 error_msg = "Error %s in %s row=%s" % (sys.exc_info()[0],pid,counter)
+                traceback.print_exc(file=sys.stderr)
                 if record is not None:
                     marc_error_file = open('tutt-errors.mrc','ab')
                     marc_error_file.write(record.as_marc().encode('utf8','ignore'))
@@ -292,7 +293,7 @@ def load_solr(csv_file):
     try: 
         response = urllib.request.urlopen(update_url % params)
     except IOError:
-        raise IOError('Unable to connect to the Solr instance.')
+        raise IOError('Unable to connect to the Solr instance. %s, params=%s' % (update_url,params))
     #print("Solr response:")
     #print(response.read())
     return response.read()
