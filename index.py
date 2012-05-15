@@ -48,10 +48,10 @@ class stub_settings(object):
 class stub_conf(object):
     def __init__(self,settings):
         self.settings = settings
-##    settings = stub_settings(SOLR_DIR='/usr/local/solr_server/multicore/marc_catalog',
-##                             SOLR_URL='http://0.0.0.0:8984/solr/marc_catalog/')
 settings = stub_settings(SOLR_DIR='/usr/local/solr_server/multicore/marc_catalog',
-                         SOLR_URL='http://tuttdemo:8984/solr/marc_catalog/')
+                         SOLR_URL='http://0.0.0.0:8984/solr/marc_catalog/')
+#settings = stub_settings(SOLR_DIR='/usr/local/solr_server/multicore/marc_catalog',
+#                         SOLR_URL='http://tuttdemo:8984/solr/marc_catalog/')
 conf = stub_conf(settings=settings)
    
 ## import django.core.management.base as mb

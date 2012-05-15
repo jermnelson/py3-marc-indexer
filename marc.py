@@ -465,7 +465,10 @@ def parse_008(record, marc_record):
     if marc_record['008']:
         field008 = marc_record['008'].value()
         print("FIELD 008 len=%s, value=%s" % (len(field008),field008))
-
+        if len(field008) < 20:
+            print("FIELD 008 len=%s, value=%s bib_#=%s" % (len(field008),
+                                                           field008,
+                                                           record["id"]))
         # "a" added for noninteger search to work
         dates = (field008[7:11] + 'a', field008[11:15] + 'a')
         # test for which date is more precise based on searching for
@@ -676,6 +679,8 @@ def get_record(marc_record, ils=None):
                           record['id'] = sub_a
             else:
                 record['id'] = bib_id[1:-1]
+            if not hasattr(record,"id"):
+                raise ValueError("Unable to extract ID from record %s" % record.title())
         elif ils == 'Unicorn':
             record['id'] = marc_record['35']['a']
         else:
