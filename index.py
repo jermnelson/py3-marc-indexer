@@ -37,20 +37,22 @@ try:
 except ImportError:
     import elementtree.ElementTree as et
 
-try:
-    import django.conf as conf
-except ImportError:
-    class stub_settings(object):
-        def __init__(self,**args):
-            self.SOLR_DIR = args['SOLR_DIR']
-            self.SOLR_URL = args['SOLR_URL']
+##try:
+##    import django.conf as conf
+##except (ImportError,SyntaxError):
+class stub_settings(object):
+    def __init__(self,**args):
+        self.SOLR_DIR = args['SOLR_DIR']
+        self.SOLR_URL = args['SOLR_URL']
 
-    class stub_conf(object):
-        def __init__(self,settings):
-            self.settings = settings
-    settings = stub_settings(SOLR_DIR='/usr/local/solr_server/multicore/marc_catalog',
-                             SOLR_URL='http://0.0.0.0:8984/solr/marc_catalog/')
-    conf = stub_conf(settings=settings)
+class stub_conf(object):
+    def __init__(self,settings):
+        self.settings = settings
+##    settings = stub_settings(SOLR_DIR='/usr/local/solr_server/multicore/marc_catalog',
+##                             SOLR_URL='http://0.0.0.0:8984/solr/marc_catalog/')
+settings = stub_settings(SOLR_DIR='/usr/local/solr_server/multicore/marc_catalog',
+                         SOLR_URL='http://tuttdemo:8984/solr/marc_catalog/')
+conf = stub_conf(settings=settings)
    
 ## import django.core.management.base as mb
 time_stamp = datetime.datetime.today().strftime("%Y%m%d-%H")    

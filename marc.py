@@ -421,7 +421,7 @@ def lookup_location(record,format=None):
     """
     location_list = locations = record.get_fields('994')
     for location in location_list:
-         subfield_a = location['a']
+         subfield_a = str(location['a'])
          in_reference = REF_LOC_RE.search(subfield_a)
          if in_reference is not None:
               ref_loc_code = in_reference.groups()[0]
@@ -464,6 +464,7 @@ def parse_008(record, marc_record):
     """
     if marc_record['008']:
         field008 = marc_record['008'].value()
+        print("FIELD 008 len=%s, value=%s" % (len(field008),field008))
 
         # "a" added for noninteger search to work
         dates = (field008[7:11] + 'a', field008[11:15] + 'a')
@@ -668,9 +669,11 @@ def get_record(marc_record, ils=None):
             if bib_id is None or len(bib_id) < 10:
               # Try to extract bib number from 035
               for field in  marc_record.get_fields('035'):
-                  sub_a = field['a'][1:-1]
-                  if sub_a.startswith('b') and len(sub_a) == 8:
-                      record['id'] = sub_a
+                  sub_a = field['a']
+                  if sub_a is not None:
+                      sub_a = field['a'][1:-1]
+                      if sub_a.startswith('b') and len(sub_a) == 8:
+                          record['id'] = sub_a
             else:
                 record['id'] = bib_id[1:-1]
         elif ils == 'Unicorn':
