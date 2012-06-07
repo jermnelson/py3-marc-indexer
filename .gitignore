@@ -4,3 +4,4 @@ tmp*.csv
 __pycache*
 *.mrc
 *.log
+*.pyc

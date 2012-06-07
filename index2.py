@@ -21,16 +21,16 @@
 
 """Indexes documents in a Solr instance."""
 
-import argparse
+import optparse
 import os
 import sys
 import time
-import marc,pymarc,traceback
+import marc2 as marc
+import pymarc,traceback
 import csv,logging,datetime
 from multiprocessing import Process,Lock,Pool
-import urllib.request, urllib.parse, urllib.error
-import urllib.request, urllib.error, urllib.parse
-import marc as module
+import urllib,urllib2
+import marc2 as module
 
 try:
     import xml.etree.ElementTree as et  # builtin as of Python 2.5
@@ -58,19 +58,17 @@ conf = stub_conf(settings=settings)
 time_stamp = datetime.datetime.today().strftime("%Y%m%d-%H")    
 logging.basicConfig(filename="%slog/%smarc-solr-indexer.log" % ('./',time_stamp),
                     level=logging.INFO)
-arg_parser = argparse.ArgumentParser(description='Index MARC records into Solr')
-arg_parser.add_argument('--new',
-                        dest='new',
-                        help='Create a new index.  If the index already exists, all docs in the index will be deleted before this indexing.')
+arg_parser = optparse.OptionParser()
+
 #arg_parser.add_argument('--parser',
 #                        dest='parser',
 #                        action='handle',
 #                        metavar='PARSER', 
 #                        help='Use PARSER (in discovery/parsers) to parse files or urls for indexing')
-arg_parser.add_argument('file_or_urls',
-                        nargs="+",
+arg_parser.add_option('--f',
+                      nargs="+",
                         #action='append',  
-                        help = '[file_or_url ...] Indexes documents in a Solr instance.')
+                      help = '[file_or_url ...] Indexes documents in a Solr instance.')
 
 print_lock = Lock()
 def index_walk():
@@ -86,12 +84,34 @@ def index_walk():
             if ext == ".mrc":
                 marc_reader = pymarc.MARCReader(open(os.path.join(shard_dir,filename),'rb'),
                                                 utf8_handling="ignore")
-                index_shard(marc_reader)
+                index_record(next(marc_reader))
                 if counter%1000:
                     sys.stderr.write('.')
                 else:
                     sys.stderr.write("shard {0}:{1}".format(i,counter))
                 counter += 1
+
+def index_record(record):
+    pid = os.getpid()
+    tmp_csv_file = 'tmp{0}.csv'.format(pid)
+    csv_handle = open(tmp_csv_file, 'w')
+    csv_writer = csv.DictWriter(csv_handle, module.FIELDNAMES)
+    fieldnames_dict = dict()
+    for row in module.FIELDNAMES:
+        fieldnames_dict[row] = row
+    csv_writer.writerow(fieldnames_dict)
+    indexed_dict = module.get_record(record,ils=module.settings.ILS)
+    if indexed_dict is not None:
+        for row in indexed_dict.items():
+            key,value = row
+            if type(value) == list or type(value) == set:
+                value = '|'.join([item for item in value])
+                indexed_dict[key] = value
+            elif type(value) == dict:
+                value = '|'.join([item for item in value.values()])
+            csv_writer.writerow(indexed_dict)
+    csv_handle.close()
+    solr_response = load_solr(tmp_csv_file)
 
 
 def index_shard(marc_recs):
@@ -143,7 +163,7 @@ def index_shard(marc_recs):
                 traceback.print_exc(file=sys.stderr)
                 if record is not None:
                     marc_error_file = open('tutt-errors.mrc','ab')
-                    marc_error_file.write(record.as_marc().encode('utf8','ignore'))
+                    marc_error_file.write(record.as_marc())
                     marc_error_file.close()
                     error_msg = '%s title=%s' % (error_msg,record.title())
                 print(error_msg)
@@ -309,11 +329,11 @@ def load_solr(csv_file):
     solr_params['stream.file'] = file_path
     solr_params['stream.contentType'] = 'text/plain;charset=utf-8'
     solr_params['commit'] = 'true'
-    params = urllib.parse.urlencode(solr_params)
+    params = urllib.urlencode(solr_params)
     update_url = conf.settings.SOLR_URL + 'update/csv?%s'
     #print("Loading records into Solr ...")
     try: 
-        response = urllib.request.urlopen(update_url % params)
+        response = urllib.urlopen(update_url % params)
     except IOError:
         raise IOError('Unable to connect to the Solr instance. %s, params=%s' % (update_url,params))
     #print("Solr response:")
