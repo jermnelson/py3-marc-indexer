@@ -463,7 +463,6 @@ def parse_008(record, marc_record):
     """
     if marc_record['008']:
         field008 = marc_record['008'].value()
-        print("FIELD 008 len=%s, value=%s" % (len(field008),field008))
         if len(field008) < 20:
             print("FIELD 008 len=%s, value=%s bib_#=%s" % (len(field008),
                                                            field008,
@@ -676,8 +675,9 @@ def get_record(marc_record, ils=None):
                           record['id'] = sub_a
             else:
                 record['id'] = bib_id[1:-1]
-            if not hasattr(record,"id"):
-                raise ValueError("Unable to extract ID from record %s" % record.title())
+            
+            #if not hasattr(record,"id"):
+            #    raise ValueError("Unable to extract ID from record %s" % record.title())
         elif ils == 'Unicorn':
             record['id'] = marc_record['35']['a']
         else:
@@ -697,8 +697,6 @@ def get_record(marc_record, ils=None):
             for code in suppressed_codes:
                 if code == 'n':
                     logging.error("NOT INDEXING %s RECORD SUPPRESSED" % record['id'])
-                    marc_error_file.write(marc_record.as_marc().encode('utf8','replace'))
-                    marc_error_file.close()
                     return
     record['format'] = get_format(marc_record)
 
@@ -844,7 +842,6 @@ def get_record(marc_record, ils=None):
         for url in  url_subfield:
             record['url'].append(url)
     record['marc_record'] = marc_record.__str__()  # Should output to MARCMaker format
-    marc_error_file.close()
     return record
 
 def get_row(record):

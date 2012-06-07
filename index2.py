@@ -110,6 +110,8 @@ def index_record(record):
             elif type(value) == dict:
                 value = '|'.join([item for item in value.values()])
             csv_writer.writerow(indexed_dict)
+    else:
+        print("BAD ERROR")
     csv_handle.close()
     solr_response = load_solr(tmp_csv_file)
 
@@ -201,54 +203,54 @@ def pool_multiprocess_index(file_or_urls,shard_size=10000):
         pool.map_async(index_shard,reader,shard_size)
     print("Finished multiprocess")
 
-def multiprocess_index(file_or_urls,shard_size=10000):
+def multiprocess_index(filename,shard_size=10000):
     lock = Lock()
     t1 = time.time()
     total_recs = 0
-    for file_ref in file_or_urls:
-        reader = pymarc.MARCReader(open(file_ref,'rb'),utf8_handling="xmlcharrefreplace")
+#    for file_ref in file_or_urls:
+    reader = pymarc.MARCReader(open(filename,'rb'),utf8_handling="xmlcharrefreplace")
 #        error_recs = open('%s-bad.mrc' % file_ref,'wb')
-        print("Starting multiprocess index for %s, sharding by %s" % (file_ref,
-                                                                      shard_size))
-        count = 1
-        marc_recs = []
-        while 1:
-            try:
-                rec = next(reader)
-            except ValueError as error:
-                lock.acquire()
-                error_msg = "%s for record %s in %s" % ("ValueError: {0}".format(error),
+    print("Starting multiprocess index for %s, sharding by %s" % (filename,
+                                                                  shard_size))
+    count = 1
+    marc_recs = []
+    while 1:
+        try:
+            rec = next(reader)
+        except ValueError as error:
+            lock.acquire()
+            error_msg = "%s for record %s in %s" % ("ValueError: {0}".format(error),
                                                         count,
                                                         file_ref)
+            print(error_msg)
+            logging.error(error_msg)
+            lock.release()
+            count += 1
+            pass
+                #rec = next(reader)
+        except StopIteration:
+            break
+        if not count%shard_size:
+            marc_recs.append(rec)
+            shard_process = Process(target=index_shard,args=(marc_recs,))
+            if shard_process is not None:
+                shard_process.start()
+                shard_process.join()
+            else:
+                lock.acquire()
+                error_msg = "Unable to process %s total_recs=%s" % (filename,total_recs)
                 print(error_msg)
                 logging.error(error_msg)
                 lock.release()
-                count += 1
-                pass
-                #rec = next(reader)
-            except StopIteration:
-                break
-            if not count%shard_size:
-                marc_recs.append(rec)
-                shard_process = Process(target=index_shard,args=(marc_recs,))
-                if shard_process is not None:
-                    shard_process.start()
-                    shard_process.join()
-                else:
-                    lock.acquire()
-                    error_msg = "Unable to process %s total_recs=%s" % (file_ref,total_recs)
-                    print(error_msg)
-                    logging.error(error_msg)
-                    lock.release()
-                    marc_recs = []
-            else:
-                marc_recs.append(rec)
-            if count%1000:
-                sys.stderr.write(".")
-            else:
-                sys.stderr.write(str(count))
-            count += 1
-            total_recs += count
+                marc_recs = []
+        else:
+           marc_recs.append(rec)
+        if count%1000:
+            sys.stderr.write(".")
+        else:
+            sys.stderr.write(str(count))
+        count += 1
+        total_recs += count
     t2 = time.time()
     total_time = (t2 - t1) / 60.0
     print("Finished multi-processing %s in %0.3f" % (total_recs,
@@ -342,7 +344,7 @@ def load_solr(csv_file):
 
 
 def cleanup_csv():
-   for row in os.listdir():
+   for row in os.listdir("."):
        if row[-3:] == 'csv':
            load_solr(row)
            os.remove(row)
@@ -350,5 +352,6 @@ def cleanup_csv():
 
 if __name__ == '__main__':
     args = arg_parser.parse_args()
+    print(args[1][0])
     #print("Passed in %s" % args.file_or_urls)
-    multiprocess_index(args.file_or_urls)
+    multiprocess_index(args[1][0])
